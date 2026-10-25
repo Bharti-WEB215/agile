@@ -18,7 +18,7 @@ Compose starts a local PostgreSQL service. It does not replace Supabase in hoste
 
 ## Quality checks
 
-Run `npm test` and `npm run lint` in `backend/`; run `npm test`, `npm run lint`, and `npm run build` in `frontend/`. See [Agile project documentation](agile-docs/) for scope, current verification status, and planned work.
+Run `npm test` and `npm run lint` in `backend/`; run `npm test`, `npm run lint`, and `npm run build` in `frontend/`. See [Agile project documentation](agile-docs/) for scope, current verification status, Jira setup, and planned work.
 
 ## Current limitations
 

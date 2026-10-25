@@ -12,7 +12,7 @@ Updated: 2026-10-25. Status describes repository evidence at the time of inspect
 | Should | As maintainer, I can run quality checks reproducibly | Lockfile installs work; backend/frontend tests, lint/type checks, and builds pass locally; CI run is confirmed | 8 | Local checks pass; remote CI not run |
 | Should | As developer, I can start the stack consistently | Docker images build and all services become healthy with safe local defaults | 8 | Docker build and all Compose services verified healthy |
 | Could | As manager, I can export reports | Sales reports export to CSV with correct totals | 5 | Planned |
-| Could | As team, I can inspect real delivery progress | Board cards link to issues/PRs and report actual state, assignee, due date, and blockers | 3 | Policy documented; no live project board found |
+| Could | As team, I can inspect real delivery progress | Jira issues link to branches/PRs and report actual state, assignee, due date, and blockers | 3 | Jira workflow documented; no Jira site/project connected or verified |
 
 ## Ready criteria
 

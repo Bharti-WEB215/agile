@@ -2,6 +2,11 @@
 
 <!-- What changed and why? Link the backlog story or issue. -->
 
+## Jira
+
+- Issue: <!-- e.g. POS-123; use N/A only for maintenance with no Jira issue -->
+- [ ] Jira issue is linked in the branch name, PR title, or description
+
 ## Verification
 
 - [ ] Backend tests / type check (record commands and results)

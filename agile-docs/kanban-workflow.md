@@ -11,7 +11,7 @@
 | Testing | 2 | Review feedback resolved; acceptance checks are being run |
 | Done | — | Acceptance criteria met, CI green, docs updated, and review approved |
 
-A card should include status, priority, assignee, due date (or explicitly none), acceptance criteria, and links to issue/branch/PR where available. Do not invent an assignee, due date, or board state when no board is connected.
+A Jira issue should include status, priority, assignee, due date (or explicitly none), acceptance criteria, and links to branch/PR where available. Keep the repository Jira key in branch names, commit subjects, and PR titles so Jira can associate development activity with the issue. Do not invent an assignee, due date, or board state when no board is connected.
 
 ## Blocked work
 
