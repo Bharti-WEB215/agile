@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { api } from '../services/api';
@@ -19,32 +19,32 @@ export default function ReportsPage() {
   const [endDate, setEndDate] = useState(getTodayDate());
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchDailySales = async (date: string) => {
+  const fetchDailySales = useCallback(async (date: string) => {
     setIsLoading(true);
     const response = await api.getDailySales(date);
     if (response.success && response.data) {
       setDailySales(response.data);
     }
     setIsLoading(false);
-  };
+  }, []);
 
-  const fetchItemSales = async (start: string, end: string) => {
+  const fetchItemSales = useCallback(async (start: string, end: string) => {
     setIsLoading(true);
     const response = await api.getItemSales(start, end);
     if (response.success && response.data) {
       setItemSales(response.data);
     }
     setIsLoading(false);
-  };
+  }, []);
 
-  const fetchPaymentSummary = async (start: string, end: string) => {
+  const fetchPaymentSummary = useCallback(async (start: string, end: string) => {
     setIsLoading(true);
     const response = await api.getPaymentSummary(start, end);
     if (response.success && response.data) {
       setPaymentSummary(response.data);
     }
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'daily') {
@@ -54,7 +54,7 @@ export default function ReportsPage() {
     } else if (activeTab === 'payment') {
       fetchPaymentSummary(startDate, endDate);
     }
-  }, [activeTab]);
+  }, [activeTab, selectedDate, startDate, endDate, fetchDailySales, fetchItemSales, fetchPaymentSummary]);
 
   return (
     <Layout role="CASHIER" title="Reports">

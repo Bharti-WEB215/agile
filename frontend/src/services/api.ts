@@ -1,7 +1,22 @@
-import { ApiResponse } from './types';
+import {
+  ApiResponse,
+  CreateOrderRequest,
+  CustomerOrderRequest,
+  DailySalesReport,
+  ItemSalesReport,
+  OrderStatus,
+  OrderWithItems,
+  PaymentModeSummary,
+  Product,
+  ProductFormData,
+  Table,
+  TableSession,
+  TableWithSession,
+  User,
+} from './types';
 
 // Base API fetch wrapper
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://restaurant-management-app-6blw.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export async function apiRequest<T>(
   url: string,
@@ -41,21 +56,21 @@ export async function apiRequest<T>(
 // Specific API methods
 export const api = {
   // Products
-  getProducts: () => apiRequest<any>('/api/products'),
-  getActiveProducts: () => apiRequest<any>('/api/products?active=true'),
-  getProduct: (id: number) => apiRequest<any>(`/api/products/${id}`),
-  createProduct: (data: any) =>
-    apiRequest<any>('/api/products', {
+  getProducts: () => apiRequest<Product[]>('/api/products'),
+  getActiveProducts: () => apiRequest<Product[]>('/api/products?active=true'),
+  getProduct: (id: number) => apiRequest<Product>(`/api/products/${id}`),
+  createProduct: (data: ProductFormData) =>
+    apiRequest<Product>('/api/products', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  updateProduct: (id: number, data: any) =>
-    apiRequest<any>(`/api/products/${id}`, {
+  updateProduct: (id: number, data: ProductFormData) =>
+    apiRequest<Product>(`/api/products/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
   toggleProductStatus: (id: number, isActive: boolean) =>
-    apiRequest<any>(`/api/products/${id}`, {
+    apiRequest<Product>(`/api/products/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ isActive }),
     }),
@@ -63,77 +78,77 @@ export const api = {
   // Orders
   getOrders: (status?: string) => {
     const query = status ? `?status=${status}` : '';
-    return apiRequest<any>(`/api/orders${query}`);
+    return apiRequest<OrderWithItems[]>(`/api/orders${query}`);
   },
   // Kitchen-specific fetch — only APPROVED, PREPARING, READY orders
-  getKitchenOrders: () => apiRequest<any>('/api/orders?kitchen=true'),
-  getOrder: (id: number) => apiRequest<any>(`/api/orders/${id}`),
-  createOrder: (data: any) =>
-    apiRequest<any>('/api/orders', {
+  getKitchenOrders: () => apiRequest<OrderWithItems[]>('/api/orders?kitchen=true'),
+  getOrder: (id: number) => apiRequest<OrderWithItems>(`/api/orders/${id}`),
+  createOrder: (data: CreateOrderRequest) =>
+    apiRequest<OrderWithItems>('/api/orders', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  updateOrderStatus: (id: number, status: string) =>
-    apiRequest<any>(`/api/orders/${id}`, {
+  updateOrderStatus: (id: number, status: OrderStatus) =>
+    apiRequest<OrderWithItems>(`/api/orders/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
   // QR Order endpoints
-  createCustomerOrder: (data: { tableToken: string; items: any[] }) =>
-    apiRequest<any>('/api/orders/customer', {
+  createCustomerOrder: (data: CustomerOrderRequest) =>
+    apiRequest<OrderWithItems>('/api/orders/customer', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   approveOrder: (id: number) =>
-    apiRequest<any>(`/api/orders/${id}/approve`, {
+    apiRequest<OrderWithItems>(`/api/orders/${id}/approve`, {
       method: 'PATCH',
     }),
-  getPendingApproval: () => apiRequest<any>('/api/orders/pending-approval'),
+  getPendingApproval: () => apiRequest<OrderWithItems[]>('/api/orders/pending-approval'),
 
   // Tables
-  getTables: () => apiRequest<any>('/api/tables'),
+  getTables: () => apiRequest<TableWithSession[]>('/api/tables'),
   createTable: (tableNo: string) =>
-    apiRequest<any>('/api/tables', {
+    apiRequest<Table>('/api/tables', {
       method: 'POST',
       body: JSON.stringify({ tableNo }),
     }),
-  getTableByToken: (token: string) => apiRequest<any>(`/api/tables/${token}`),
-  getTableSession: (token: string) => apiRequest<any>(`/api/tables/${token}/session`),
+  getTableByToken: (token: string) => apiRequest<Table>(`/api/tables/${token}`),
+  getTableSession: (token: string) => apiRequest<TableSession>(`/api/tables/${token}/session`),
   toggleTableStatus: (id: number, isActive: boolean) =>
-    apiRequest<any>(`/api/tables/${id}`, {
+    apiRequest<Table>(`/api/tables/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ isActive }),
     }),
   settleTable: (id: number) =>
-    apiRequest<any>(`/api/tables/${id}/settle`, {
+    apiRequest<{ message: string; table: Table }>(`/api/tables/${id}/settle`, {
       method: 'PATCH',
     }),
   deleteTable: (id: number) =>
-    apiRequest<any>(`/api/tables/${id}`, {
+    apiRequest<{ message: string }>(`/api/tables/${id}`, {
       method: 'DELETE',
     }),
 
   // Reports
   getDailySales: (date?: string) => {
     const query = date ? `?date=${date}` : '';
-    return apiRequest<any>(`/api/reports/daily-sales${query}`);
+    return apiRequest<DailySalesReport>(`/api/reports/daily-sales${query}`);
   },
   getItemSales: (startDate?: string, endDate?: string) => {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return apiRequest<any>(`/api/reports/item-sales${query}`);
+    return apiRequest<ItemSalesReport[]>(`/api/reports/item-sales${query}`);
   },
   getPaymentSummary: (startDate?: string, endDate?: string) => {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return apiRequest<any>(`/api/reports/payment-summary${query}`);
+    return apiRequest<PaymentModeSummary[]>(`/api/reports/payment-summary${query}`);
   },
 
   // Users
-  getUsers: () => apiRequest<any>('/api/users'),
+  getUsers: () => apiRequest<User[]>('/api/users'),
 };
 

@@ -77,6 +77,15 @@ export default function Cart({
                   +
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={() => onRemoveItem(item.productId)}
+                aria-label={`Remove ${item.name}`}
+                disabled={isProcessing}
+                className="ml-2 rounded-md px-2 py-1 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                Remove
+              </button>
             </div>
           ))
         )}

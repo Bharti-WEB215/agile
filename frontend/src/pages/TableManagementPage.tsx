@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Layout from '../components/Layout';
 import Toast from '../components/Toast';
@@ -19,11 +19,11 @@ export default function TableManagementPage() {
   const [toast, setToast] = useState<ToastType>(null);
   const [qrModalTable, setQrModalTable] = useState<TableWithSession | null>(null);
 
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
-  };
+  }, []);
 
-  const fetchTables = async () => {
+  const fetchTables = useCallback(async () => {
     const response = await api.getTables();
     if (response.success && response.data) {
       setTables(response.data);
@@ -31,11 +31,11 @@ export default function TableManagementPage() {
       showToast('Failed to load tables', 'error');
     }
     setIsLoading(false);
-  };
+  }, [showToast]);
 
   useEffect(() => {
     fetchTables();
-  }, []);
+  }, [fetchTables]);
 
   const handleCreateTable = async () => {
     if (!newTableNo.trim()) {

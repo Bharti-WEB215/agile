@@ -1,11 +1,11 @@
-import { OrderWithItems } from '../services/types';
+import { OrderStatus, OrderWithItems } from '../services/types';
 import { formatCurrency, formatDateTime, getPaymentModeColor, getProductImage } from '../services/utils';
 import StatusBadge from './StatusBadge';
 
 interface OrderCardProps {
   order: OrderWithItems;
   showPrices?: boolean;
-  onUpdateStatus?: (orderId: number, status: string) => void;
+  onUpdateStatus?: (orderId: number, status: OrderStatus) => void;
   onApprove?: (orderId: number) => void;
   isUpdating?: boolean;
 }
@@ -17,13 +17,16 @@ export default function OrderCard({
   onApprove,
   isUpdating = false,
 }: OrderCardProps) {
-  const statusFlow = ['PENDING', 'APPROVED', 'PREPARING', 'READY', 'COMPLETED'];
+  const statusFlow: OrderStatus[] = ['PENDING', 'APPROVED', 'PREPARING', 'READY', 'COMPLETED'];
   
   const isPendingCashier = order.status === 'PENDING' && order.source === 'CASHIER';
   const effectiveStatus = isPendingCashier ? 'APPROVED' : order.status;
   
   const currentIndex = statusFlow.indexOf(effectiveStatus);
-  const nextStatus = currentIndex < statusFlow.length - 1 ? statusFlow[currentIndex + 1] : null;
+  const nextStatus =
+    order.status !== 'CANCELLED' && currentIndex >= 0 && currentIndex < statusFlow.length - 1
+      ? statusFlow[currentIndex + 1]
+      : null;
 
   return (
     <div className="glass rounded-2xl shadow-lg p-6 border border-white/50 dark:border-white/5 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden group">

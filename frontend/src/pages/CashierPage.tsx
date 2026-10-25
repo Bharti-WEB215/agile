@@ -34,15 +34,11 @@ export default function CashierPage() {
   const [tables, setTables] = useState<TableWithSession[]>([]);
   const [settlingTableId, setSettlingTableId] = useState<number | null>(null);
 
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
-  };
-
-  useEffect(() => {
-    fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     const response = await api.getProducts();
     if (response.success && response.data) {
@@ -51,7 +47,11 @@ export default function CashierPage() {
       showToast('Failed to load products', 'error');
     }
     setIsLoading(false);
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const fetchPendingOrders = useCallback(async () => {
     const response = await api.getPendingApproval();
@@ -139,7 +139,7 @@ export default function CashierPage() {
 
     const response = await api.createOrder(orderData);
 
-    if (response.success) {
+    if (response.success && response.data) {
       showToast(`Order placed successfully! Order #${response.data.orderNumber}`, 'success');
       setCart([]);
       setPaymentMode('CASH');

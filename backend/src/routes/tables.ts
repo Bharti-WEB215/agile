@@ -4,6 +4,12 @@ import { prisma } from '../prisma';
 
 const router = Router();
 
+// Helper to parse and validate ID parameter
+function parseId(idStr: string): number | null {
+  const id = parseInt(idStr, 10);
+  return isNaN(id) ? null : id;
+}
+
 // GET /api/tables - List all tables with active session info
 router.get('/', async (_req: Request, res: Response) => {
   try {
@@ -36,7 +42,7 @@ router.get('/', async (_req: Request, res: Response) => {
 
       return {
         ...table,
-        orders: undefined, // Don't send all orders in list view
+        orders: undefined,
         activeSession: {
           orderCount: sessionOrders.length,
           totalAmount: sessionTotal,
@@ -61,7 +67,6 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    // Check if table number already exists
     const existing = await prisma.table.findUnique({
       where: { tableNo: tableNo.trim() },
     });
@@ -87,11 +92,11 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/tables/:token - Get table info by QR token (public, for customer menu)
+// GET /api/tables/:token - Get table info by QR token
 router.get('/:token', async (req: Request, res: Response) => {
   try {
     const table = await prisma.table.findUnique({
-      where: { qrToken: req.params.token },
+      where: { qrToken: String(req.params.token) },
     });
 
     if (!table) {
@@ -111,11 +116,11 @@ router.get('/:token', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/tables/:token/session - Get current session orders for a table
+// GET /api/tables/:token/session - Get current session orders
 router.get('/:token/session', async (req: Request, res: Response) => {
   try {
     const table = await prisma.table.findUnique({
-      where: { qrToken: req.params.token },
+      where: { qrToken: String(req.params.token) },
     });
 
     if (!table) {
@@ -123,7 +128,6 @@ router.get('/:token/session', async (req: Request, res: Response) => {
       return;
     }
 
-    // Get all orders since last settlement
     const sessionOrders = await prisma.order.findMany({
       where: {
         tableId: table.id,
@@ -160,6 +164,12 @@ router.get('/:token/session', async (req: Request, res: Response) => {
 // PATCH /api/tables/:id - Toggle table active status
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
+    const id = parseId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid table ID' });
+      return;
+    }
+
     const { isActive } = req.body;
 
     if (typeof isActive !== 'boolean') {
@@ -167,8 +177,14 @@ router.patch('/:id', async (req: Request, res: Response) => {
       return;
     }
 
+    const existing = await prisma.table.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: 'Table not found' });
+      return;
+    }
+
     const table = await prisma.table.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id },
       data: { isActive },
     });
 
@@ -179,17 +195,44 @@ router.patch('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// PATCH /api/tables/:id/settle - Settle table (cashier receives payment)
+// PATCH /api/tables/:id/settle - Settle table and mark session orders as COMPLETED
 router.patch('/:id/settle', async (req: Request, res: Response) => {
   try {
-    const tableId = parseInt(req.params.id);
+    const id = parseId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid table ID' });
+      return;
+    }
 
-    const table = await prisma.table.update({
-      where: { id: tableId },
-      data: { lastSettledAt: new Date() },
+    const existingTable = await prisma.table.findUnique({ where: { id } });
+    if (!existingTable) {
+      res.status(404).json({ error: 'Table not found' });
+      return;
+    }
+
+    // Use a transaction to settle table and complete all session orders
+    const result = await prisma.$transaction(async (tx) => {
+      // Mark all active session orders as COMPLETED
+      await tx.order.updateMany({
+        where: {
+          tableId: id,
+          source: 'QR',
+          createdAt: { gt: existingTable.lastSettledAt },
+          status: { in: ['PENDING', 'APPROVED', 'PREPARING', 'READY'] },
+        },
+        data: { status: 'COMPLETED' },
+      });
+
+      // Update table settlement timestamp
+      const table = await tx.table.update({
+        where: { id },
+        data: { lastSettledAt: new Date() },
+      });
+
+      return table;
     });
 
-    res.json({ message: 'Table settled successfully', table });
+    res.json({ message: 'Table settled successfully', table: result });
   } catch (error) {
     console.error('Table settle error:', error);
     res.status(500).json({ error: 'Failed to settle table' });
@@ -199,13 +242,32 @@ router.patch('/:id/settle', async (req: Request, res: Response) => {
 // DELETE /api/tables/:id - Delete a table
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
+    const id = parseId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid table ID' });
+      return;
+    }
+
+    const existing = await prisma.table.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: 'Table not found' });
+      return;
+    }
+
     await prisma.table.delete({
-      where: { id: parseInt(req.params.id) },
+      where: { id },
     });
 
     res.json({ message: 'Table deleted successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Table DELETE error:', error);
+    // Handle foreign key constraint violation
+    if (error?.code === 'P2003') {
+      res.status(409).json({
+        error: 'Cannot delete table with existing orders. Settle the table first.',
+      });
+      return;
+    }
     res.status(500).json({ error: 'Failed to delete table' });
   }
 });

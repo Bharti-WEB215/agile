@@ -8,13 +8,23 @@ function getTodayDate(): string {
   return new Date().toISOString().split('T')[0];
 }
 
+// Helper to validate date string
+function isValidDate(dateStr: string): boolean {
+  const date = new Date(dateStr);
+  return !isNaN(date.getTime());
+}
+
 // GET /api/reports/daily-sales - Get daily sales report
 router.get('/daily-sales', async (req: Request, res: Response) => {
   try {
     const dateParam = req.query.date as string | undefined;
     const targetDate = dateParam || getTodayDate();
 
-    // Get start and end of day
+    if (!isValidDate(targetDate)) {
+      res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+      return;
+    }
+
     const startOfDay = new Date(targetDate);
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -31,9 +41,11 @@ router.get('/daily-sales', async (req: Request, res: Response) => {
       },
     });
 
-    // Calculate totals
     const totalOrders = orders.length;
-    const totalRevenue = orders.reduce(
+
+    // Revenue only from COMPLETED orders
+    const completedOrders = orders.filter(o => o.status === 'COMPLETED');
+    const totalRevenue = completedOrders.reduce(
       (sum, order) => sum + parseFloat(order.totalAmount.toString()),
       0
     );
@@ -77,6 +89,15 @@ router.get('/item-sales', async (req: Request, res: Response) => {
     const startDate = req.query.startDate as string | undefined;
     const endDate = req.query.endDate as string | undefined;
 
+    if (startDate && !isValidDate(startDate)) {
+      res.status(400).json({ error: 'Invalid startDate format. Use YYYY-MM-DD.' });
+      return;
+    }
+    if (endDate && !isValidDate(endDate)) {
+      res.status(400).json({ error: 'Invalid endDate format. Use YYYY-MM-DD.' });
+      return;
+    }
+
     // Build date filter
     const dateFilter: any = {};
     if (startDate) {
@@ -88,15 +109,14 @@ router.get('/item-sales', async (req: Request, res: Response) => {
       dateFilter.lte.setHours(23, 59, 59, 999);
     }
 
-    // Get all order items with products
+    // Only include items from COMPLETED orders
     const orderItems = await prisma.orderItem.findMany({
-      where: Object.keys(dateFilter).length > 0
-        ? {
-            order: {
-              createdAt: dateFilter,
-            },
-          }
-        : undefined,
+      where: {
+        order: {
+          status: 'COMPLETED',
+          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+        },
+      },
       include: {
         product: true,
       },
@@ -140,7 +160,15 @@ router.get('/payment-summary', async (req: Request, res: Response) => {
     const startDate = req.query.startDate as string | undefined;
     const endDate = req.query.endDate as string | undefined;
 
-    // Build date filter
+    if (startDate && !isValidDate(startDate)) {
+      res.status(400).json({ error: 'Invalid startDate format. Use YYYY-MM-DD.' });
+      return;
+    }
+    if (endDate && !isValidDate(endDate)) {
+      res.status(400).json({ error: 'Invalid endDate format. Use YYYY-MM-DD.' });
+      return;
+    }
+
     const dateFilter: any = {};
     if (startDate) {
       dateFilter.gte = new Date(startDate);
@@ -151,14 +179,14 @@ router.get('/payment-summary', async (req: Request, res: Response) => {
       dateFilter.lte.setHours(23, 59, 59, 999);
     }
 
-    // Get all orders
+    // Only include COMPLETED orders
     const orders = await prisma.order.findMany({
-      where: Object.keys(dateFilter).length > 0
-        ? { createdAt: dateFilter }
-        : undefined,
+      where: {
+        status: 'COMPLETED',
+        ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+      },
     });
 
-    // Aggregate by payment mode
     const paymentSummaryMap = new Map<string, any>();
 
     orders.forEach((order) => {

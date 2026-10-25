@@ -47,7 +47,7 @@ model Order {
   status      OrderStatus  @default(PENDING)
   source      String       @default("CASHIER") @db.VarChar(20)
   tableId     Int?         @map("table_id")
-  table       Table?       @relation(fields: [tableId], references: [id])
+  table       Table?       @relation(fields: [tableId], references: [id], onDelete: SetNull)
   orderItems  OrderItem[]
 
   @@map("orders")
@@ -82,4 +82,5 @@ enum OrderStatus {
   PREPARING
   READY
   COMPLETED
+  CANCELLED
 }

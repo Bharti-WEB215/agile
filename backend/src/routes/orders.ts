@@ -1,17 +1,34 @@
 import { Router, Request, Response } from 'express';
+import { randomUUID } from 'crypto';
 import { prisma } from '../prisma';
 
 const router = Router();
 
-// Helper to generate order number
+// Valid status transitions (state machine)
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ['APPROVED', 'CANCELLED'],
+  APPROVED: ['PREPARING', 'CANCELLED'],
+  PREPARING: ['READY', 'CANCELLED'],
+  READY: ['COMPLETED'],
+  COMPLETED: [],
+  CANCELLED: [],
+};
+
+// Helper to generate unique order number
 function generateOrderNumber(): string {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000);
-  return `ORD-${timestamp}-${random}`;
+  const now = new Date();
+  const dateStr = now.toISOString().slice(2, 10).replace(/-/g, '');
+  const unique = randomUUID().slice(0, 6).toUpperCase();
+  return `ORD-${dateStr}-${unique}`;
+}
+
+// Helper to parse and validate ID parameter
+function parseId(idStr: string): number | null {
+  const id = parseInt(idStr, 10);
+  return isNaN(id) ? null : id;
 }
 
 // GET /api/orders - Get all orders or filter by status
-// Special query: ?kitchen=true returns only APPROVED, PREPARING, READY orders
 router.get('/', async (req: Request, res: Response) => {
   try {
     const status = req.query.status as string | undefined;
@@ -74,14 +91,8 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const body = req.body;
 
-    // Validate request
-    if (!body.items || body.items.length === 0) {
+    if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
       res.status(400).json({ error: 'Order must have at least one item' });
-      return;
-    }
-
-    if (!body.totalAmount || body.totalAmount <= 0) {
-      res.status(400).json({ error: 'Total amount must be greater than 0' });
       return;
     }
 
@@ -90,20 +101,54 @@ router.post('/', async (req: Request, res: Response) => {
       return;
     }
 
-    // Create order — CASHIER orders go directly to APPROVED so kitchen sees them immediately
+    const validPaymentModes = ['CASH', 'UPI', 'CARD'];
+    if (!validPaymentModes.includes(body.paymentMode)) {
+      res.status(400).json({ error: 'Invalid payment mode' });
+      return;
+    }
+
+    // Fetch actual product prices from database (prevent price tampering)
+    const productIds = body.items.map((item: any) => item.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, isActive: true },
+    });
+
+    if (products.length !== productIds.length) {
+      res.status(400).json({ error: 'One or more products are invalid or inactive' });
+      return;
+    }
+
+    const productPriceMap = new Map(products.map(p => [p.id, parseFloat(p.price.toString())]));
+
+    // Validate quantities and calculate server-side total
+    const orderItems = body.items.map((item: any) => {
+      const serverPrice = productPriceMap.get(item.productId);
+      if (!serverPrice) throw new Error(`Product ${item.productId} not found`);
+      if (!item.quantity || item.quantity < 1 || !Number.isInteger(item.quantity)) {
+        throw new Error(`Invalid quantity for product ${item.productId}`);
+      }
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        price: serverPrice,
+      };
+    });
+
+    const totalAmount = orderItems.reduce(
+      (sum: number, item: any) => sum + item.price * item.quantity,
+      0
+    );
+
+    // Create order — CASHIER orders go directly to APPROVED
     const order = await prisma.order.create({
       data: {
         orderNumber: generateOrderNumber(),
-        totalAmount: body.totalAmount,
+        totalAmount,
         paymentMode: body.paymentMode,
         status: 'APPROVED',
         source: 'CASHIER',
         orderItems: {
-          create: body.items.map((item: any) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
+          create: orderItems,
         },
       },
       include: {
@@ -117,13 +162,17 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     res.status(201).json(order);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Orders POST error:', error);
+    if (error.message?.includes('Invalid quantity') || error.message?.includes('not found')) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     res.status(500).json({ error: 'Failed to create order' });
   }
 });
 
-// POST /api/orders/customer - Create a customer order via QR (must be defined before /:id routes)
+// POST /api/orders/customer - Create a customer order via QR
 router.post('/customer', async (req: Request, res: Response) => {
   try {
     const { tableToken, items } = req.body;
@@ -153,16 +202,37 @@ router.post('/customer', async (req: Request, res: Response) => {
       return;
     }
 
-    // Calculate total amount
-    const totalAmount = items.reduce(
-      (sum: number, item: any) => sum + (item.price * item.quantity),
-      0
-    );
+    // Fetch actual product prices from database (prevent price tampering)
+    const productIds = items.map((item: any) => item.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, isActive: true },
+    });
 
-    if (totalAmount <= 0) {
-      res.status(400).json({ error: 'Total amount must be greater than 0' });
+    if (products.length !== productIds.length) {
+      res.status(400).json({ error: 'One or more products are invalid or inactive' });
       return;
     }
+
+    const productPriceMap = new Map(products.map(p => [p.id, parseFloat(p.price.toString())]));
+
+    // Calculate total using server-side prices
+    const orderItems = items.map((item: any) => {
+      const serverPrice = productPriceMap.get(item.productId);
+      if (!serverPrice) throw new Error(`Product ${item.productId} not found`);
+      if (!item.quantity || item.quantity < 1 || !Number.isInteger(item.quantity)) {
+        throw new Error(`Invalid quantity for product ${item.productId}`);
+      }
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        price: serverPrice,
+      };
+    });
+
+    const totalAmount = orderItems.reduce(
+      (sum: number, item: any) => sum + item.price * item.quantity,
+      0
+    );
 
     const order = await prisma.order.create({
       data: {
@@ -172,11 +242,7 @@ router.post('/customer', async (req: Request, res: Response) => {
         source: 'QR',
         tableId: table.id,
         orderItems: {
-          create: items.map((item: any) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
+          create: orderItems,
         },
       },
       include: {
@@ -190,8 +256,12 @@ router.post('/customer', async (req: Request, res: Response) => {
     });
 
     res.status(201).json(order);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Customer order POST error:', error);
+    if (error.message?.includes('Invalid quantity') || error.message?.includes('not found')) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     res.status(500).json({ error: 'Failed to create customer order' });
   }
 });
@@ -199,8 +269,14 @@ router.post('/customer', async (req: Request, res: Response) => {
 // GET /api/orders/:id - Get a single order
 router.get('/:id', async (req: Request, res: Response) => {
   try {
+    const id = parseId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid order ID' });
+      return;
+    }
+
     const order = await prisma.order.findUnique({
-      where: { id: parseInt(req.params.id as string) },
+      where: { id },
       include: {
         orderItems: {
           include: {
@@ -226,11 +302,14 @@ router.get('/:id', async (req: Request, res: Response) => {
 // PATCH /api/orders/:id/approve - Approve a pending customer order
 router.patch('/:id/approve', async (req: Request, res: Response) => {
   try {
-    const orderId = parseInt(req.params.id as string);
+    const id = parseId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid order ID' });
+      return;
+    }
 
-    // Verify the order exists and is PENDING
     const existingOrder = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id },
     });
 
     if (!existingOrder) {
@@ -244,7 +323,7 @@ router.patch('/:id/approve', async (req: Request, res: Response) => {
     }
 
     const order = await prisma.order.update({
-      where: { id: orderId },
+      where: { id },
       data: { status: 'APPROVED' },
       include: {
         orderItems: {
@@ -263,9 +342,15 @@ router.patch('/:id/approve', async (req: Request, res: Response) => {
   }
 });
 
-// PATCH /api/orders/:id - Update order status
+// PATCH /api/orders/:id - Update order status with state machine validation
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
+    const id = parseId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid order ID' });
+      return;
+    }
+
     const body = req.body;
 
     if (!body.status) {
@@ -273,14 +358,33 @@ router.patch('/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    const validStatuses = ['PENDING', 'APPROVED', 'PREPARING', 'READY', 'COMPLETED'];
+    const validStatuses = ['PENDING', 'APPROVED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED'];
     if (!validStatuses.includes(body.status)) {
       res.status(400).json({ error: 'Invalid status value' });
       return;
     }
 
+    // Fetch current order to validate transition
+    const existingOrder = await prisma.order.findUnique({
+      where: { id },
+    });
+
+    if (!existingOrder) {
+      res.status(404).json({ error: 'Order not found' });
+      return;
+    }
+
+    // Validate status transition
+    const allowedNextStatuses = VALID_TRANSITIONS[existingOrder.status] || [];
+    if (!allowedNextStatuses.includes(body.status)) {
+      res.status(400).json({
+        error: `Cannot transition from ${existingOrder.status} to ${body.status}. Allowed: ${allowedNextStatuses.join(', ') || 'none'}`,
+      });
+      return;
+    }
+
     const order = await prisma.order.update({
-      where: { id: parseInt(req.params.id as string) },
+      where: { id },
       data: { status: body.status },
       include: {
         orderItems: {

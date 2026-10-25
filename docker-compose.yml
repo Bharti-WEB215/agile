@@ -1,0 +1,80 @@
+services:
+  # PostgreSQL (optional local dev database — use Supabase in production)
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-restpos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your local .env file}
+      POSTGRES_DB: ${POSTGRES_DB:-restpos_db}
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-restpos}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restpos-network
+
+  # Initialize the local schema and demo data before the API starts.
+  db-init:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ['sh', '-c', 'npm run prisma:push && npm run prisma:seed']
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-restpos}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your local .env file}@postgres:5432/${POSTGRES_DB:-restpos_db}?schema=public
+      DIRECT_URL: postgresql://${POSTGRES_USER:-restpos}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your local .env file}@postgres:5432/${POSTGRES_DB:-restpos_db}?schema=public
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - restpos-network
+    restart: 'no'
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-restpos}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your local .env file}@postgres:5432/${POSTGRES_DB:-restpos_db}?schema=public
+      DIRECT_URL: postgresql://${POSTGRES_USER:-restpos}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your local .env file}@postgres:5432/${POSTGRES_DB:-restpos_db}?schema=public
+      PORT: '3002'
+      NODE_ENV: production
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - '3002:3002'
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3002/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - restpos-network
+
+  # Frontend (Nginx + built React app)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '3000:80'
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - restpos-network
+
+volumes:
+  postgres_data:
+
+networks:
+  restpos-network:
+    driver: bridge

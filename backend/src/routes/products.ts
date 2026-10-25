@@ -3,6 +3,12 @@ import { prisma } from '../prisma';
 
 const router = Router();
 
+// Helper to parse and validate ID parameter
+function parseId(idStr: string): number | null {
+  const id = parseInt(idStr, 10);
+  return isNaN(id) ? null : id;
+}
+
 // GET /api/products - Get all products or filter by active status
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -14,12 +20,9 @@ router.get('/', async (req: Request, res: Response) => {
     });
 
     res.json(products);
-  } catch (error: any) {
-    console.error('Products GET error:', error?.message || error);
-    res.status(500).json({
-      error: 'Failed to fetch products',
-      details: error?.message || String(error),
-    });
+  } catch (error) {
+    console.error('Products GET error:', error);
+    res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
 
@@ -28,41 +31,43 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const body = req.body;
 
-    // Validate required fields
     if (!body.name || !body.price || !body.category) {
       res.status(400).json({ error: 'Name, price, and category are required' });
       return;
     }
 
-    if (body.price <= 0) {
-      res.status(400).json({ error: 'Price must be greater than 0' });
+    if (typeof body.price !== 'number' || body.price <= 0) {
+      res.status(400).json({ error: 'Price must be a positive number' });
       return;
     }
 
     const product = await prisma.product.create({
       data: {
-        name: body.name,
+        name: body.name.trim(),
         price: body.price,
-        category: body.category,
+        category: body.category.trim(),
         isActive: body.isActive ?? true,
       },
     });
 
     res.status(201).json(product);
-  } catch (error: any) {
-    console.error('Products POST error:', error?.message || error);
-    res.status(500).json({
-      error: 'Failed to create product',
-      details: error?.message || String(error),
-    });
+  } catch (error) {
+    console.error('Products POST error:', error);
+    res.status(500).json({ error: 'Failed to create product' });
   }
 });
 
 // GET /api/products/:id - Get a single product
 router.get('/:id', async (req: Request, res: Response) => {
   try {
+    const id = parseId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid product ID' });
+      return;
+    }
+
     const product = await prisma.product.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: { id },
     });
 
     if (!product) {
@@ -80,25 +85,37 @@ router.get('/:id', async (req: Request, res: Response) => {
 // PUT /api/products/:id - Update a product
 router.put('/:id', async (req: Request, res: Response) => {
   try {
+    const id = parseId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid product ID' });
+      return;
+    }
+
     const body = req.body;
 
-    // Validate required fields
     if (!body.name || !body.price || !body.category) {
       res.status(400).json({ error: 'Name, price, and category are required' });
       return;
     }
 
-    if (body.price <= 0) {
-      res.status(400).json({ error: 'Price must be greater than 0' });
+    if (typeof body.price !== 'number' || body.price <= 0) {
+      res.status(400).json({ error: 'Price must be a positive number' });
+      return;
+    }
+
+    // Check if product exists first
+    const existing = await prisma.product.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: 'Product not found' });
       return;
     }
 
     const product = await prisma.product.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id },
       data: {
-        name: body.name,
+        name: body.name.trim(),
         price: body.price,
-        category: body.category,
+        category: body.category.trim(),
         isActive: body.isActive,
       },
     });
@@ -113,10 +130,23 @@ router.put('/:id', async (req: Request, res: Response) => {
 // PATCH /api/products/:id - Toggle product active status
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
+    const id = parseId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'Invalid product ID' });
+      return;
+    }
+
     const body = req.body;
 
+    // Check if product exists
+    const existing = await prisma.product.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: 'Product not found' });
+      return;
+    }
+
     const product = await prisma.product.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id },
       data: {
         isActive: body.isActive,
       },

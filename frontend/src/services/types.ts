@@ -4,7 +4,7 @@ export type Role = 'CASHIER' | 'KITCHEN';
 
 export type PaymentMode = 'CASH' | 'UPI' | 'CARD';
 
-export type OrderStatus = 'PENDING' | 'APPROVED' | 'PREPARING' | 'READY' | 'COMPLETED';
+export type OrderStatus = 'PENDING' | 'APPROVED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
 
 export type OrderSource = 'CASHIER' | 'QR';
 

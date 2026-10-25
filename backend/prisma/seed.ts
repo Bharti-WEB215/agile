@@ -65,6 +65,10 @@ async function main() {
     });
   }
 
+  // Explicit demo IDs bypass PostgreSQL's sequences; advance them for later inserts.
+  await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('products', 'id'), (SELECT COALESCE(MAX(id), 1) FROM products))`;
+  await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT COALESCE(MAX(id), 1) FROM users))`;
+
   console.log(`✅ Created ${products.length} products`);
 
   // Create sample tables
@@ -87,9 +91,11 @@ async function main() {
   console.log(`✅ Created ${tables.length} tables`);
 
   // Create a sample order
-  const order = await prisma.order.create({
-    data: {
-      orderNumber: `ORD-${Date.now()}`,
+  const order = await prisma.order.upsert({
+    where: { orderNumber: 'ORD-DEMO-001' },
+    update: {},
+    create: {
+      orderNumber: 'ORD-DEMO-001',
       totalAmount: 140,
       paymentMode: 'CASH',
       status: 'COMPLETED',

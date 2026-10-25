@@ -59,7 +59,7 @@ export default function KitchenPage() {
     }
   }, [autoRefresh, fetchOrders]);
 
-  const handleUpdateStatus = async (orderId: number, status: string) => {
+  const handleUpdateStatus = async (orderId: number, status: OrderStatus) => {
     setUpdatingOrderId(orderId);
 
     const response = await api.updateOrderStatus(orderId, status);
