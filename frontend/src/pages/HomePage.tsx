@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 
-const jiraUrl = 'https://chini-sot.atlassian.net/jira/software/projects/SCRUM';
+const jiraUrl = 'https://chini-sot.atlassian.net/jira/software/projects/SCRUM/boards/1';
 
 const roles = [
   {

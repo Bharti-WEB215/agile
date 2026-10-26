@@ -5,7 +5,7 @@
 - Jira site: [chini-sot.atlassian.net](https://chini-sot.atlassian.net)
 - Jira project: **Team Astro** (`SCRUM`)
 - GitHub repository connected through GitHub for Atlassian: [`Bharti-WEB215/agile`](https://github.com/Bharti-WEB215/agile)
-- The integration is scoped to the `agile` repository. Jira opens from the RestoPOS home page and the shared application header.
+- The integration is scoped to the `agile` repository. The RestoPOS home page and shared application header link directly to the `SCRUM` board (board ID `1`).
 
 The Jira link is a workspace shortcut. The RestoPOS browser app does not call Jira APIs or display live Jira issue data. Do not add Jira API tokens or credentials to this repository. Jira issues and statuses must be checked in Jira itself.
 
