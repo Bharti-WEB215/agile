@@ -106,6 +106,15 @@ export default function Layout({ children, role, title }: LayoutProps) {
               )}
             </div>
             <div className="flex items-center space-x-4">
+              <a
+                href="https://chini-sot.atlassian.net/jira/software/projects/SCRUM"
+                target="_blank"
+                rel="noreferrer"
+                className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:text-blue-300"
+                aria-label="Open Team Astro in Jira"
+              >
+                <span aria-hidden="true">📋</span> Jira
+              </a>
               {role && (
                 <span className="px-4 py-1.5 text-xs font-bold tracking-wider text-white bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-indigo-500 dark:to-purple-500 rounded-full shadow-md shadow-blue-500/20 dark:shadow-indigo-500/20">
                   {role}

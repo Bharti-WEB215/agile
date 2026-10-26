@@ -1,91 +1,107 @@
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 
+const jiraUrl = 'https://chini-sot.atlassian.net/jira/software/projects/SCRUM';
+
+const roles = [
+  {
+    title: 'Cashier',
+    description: 'Build orders, manage the menu, and keep service moving.',
+    icon: '💳',
+    accent: 'blue',
+    href: '/cashier',
+    features: ['Menu & products', 'Order billing', 'QR order review'],
+  },
+  {
+    title: 'Kitchen',
+    description: 'See incoming tickets and move each order through preparation.',
+    icon: '🍳',
+    accent: 'emerald',
+    href: '/kitchen',
+    features: ['Live order queue', 'Preparation status', 'Ready to serve'],
+  },
+  {
+    title: 'Tables',
+    description: 'Organize seating, QR menus, and active dining sessions.',
+    icon: '🪑',
+    accent: 'violet',
+    href: '/tables',
+    features: ['Table overview', 'QR code access', 'Session settlement'],
+  },
+];
+
 export default function HomePage() {
   return (
     <Layout>
-      <div className="min-h-[80vh] flex flex-col items-center justify-center relative">
-        <div className="absolute inset-0 max-w-lg mx-auto h-72 blur-[118px] sm:max-w-3xl sm:h-[400px] z-[-1] bg-gradient-to-tr from-blue-300 to-indigo-500 dark:from-indigo-600 dark:to-purple-700 opacity-20 dark:opacity-15"></div>
-        
-        <div className="text-center z-10 mb-16 animate-in slide-in-from-bottom-6 duration-700">
-          <h1 className="text-6xl sm:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 mb-6 drop-shadow-sm tracking-tight">
-            Welcome to RestoPOS
-          </h1>
-          <p className="text-xl sm:text-2xl text-gray-500 dark:text-gray-400 font-light max-w-2xl mx-auto tracking-wide">
-            The next generation point of sale system. Select your role to get started.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto w-full px-4 animate-in slide-in-from-bottom-10 shadow-black duration-1000 delay-150">
-          {/* Cashier Card */}
-          <Link
-            to="/cashier"
-            className="group glass rounded-3xl p-8 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20 dark:hover:shadow-indigo-500/10 transition-all duration-300 border-t border-l border-white/60 dark:border-white/5"
-          >
-            <div className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-indigo-500/20 dark:to-indigo-500/5 w-20 h-20 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-inner group-hover:scale-110 transition-transform">
-              💰
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-blue-600 dark:group-hover:text-indigo-400 transition-colors">
-              CASHIER
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400 leading-relaxed mb-6 h-12">
-              Manage products, create orders, and view comprehensive reports.
+      <div className="space-y-12 pb-10">
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-gradient-to-br from-white via-blue-50 to-indigo-100 px-6 py-12 shadow-xl shadow-indigo-950/5 dark:border-white/10 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950 sm:px-10 sm:py-16">
+          <div className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 rounded-full bg-indigo-300/30 blur-3xl dark:bg-indigo-500/20" />
+          <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-cyan-200/30 blur-3xl dark:bg-cyan-500/10" />
+          <div className="relative max-w-3xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-700 dark:border-indigo-400/20 dark:bg-white/5 dark:text-indigo-200">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" /> Restaurant operations
+            </span>
+            <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-6xl">
+              Every service,<br className="hidden sm:block" /> running smoothly.
+            </h1>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">
+              One calm workspace for front of house, kitchen, and table service. Choose where you want to jump in.
             </p>
-            <div className="space-y-2 border-t pt-4 border-gray-100 dark:border-white/8">
-              {['Product management', 'Place orders & billing', 'Approve QR orders'].map(item => (
-                <div key={item} className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-400">
-                  <span className="text-blue-500 dark:text-indigo-400 mr-2 text-lg">•</span> {item}
-                </div>
-              ))}
+            <div className="mt-8 flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+              <span className="rounded-full bg-white/75 px-3 py-1.5 shadow-sm dark:bg-white/10">Fast order flow</span>
+              <span className="rounded-full bg-white/75 px-3 py-1.5 shadow-sm dark:bg-white/10">Live kitchen queue</span>
+              <span className="rounded-full bg-white/75 px-3 py-1.5 shadow-sm dark:bg-white/10">QR table service</span>
             </div>
-          </Link>
+          </div>
+          <div className="absolute bottom-[-2rem] right-8 hidden text-[10rem] leading-none opacity-20 drop-shadow-xl dark:opacity-15 lg:block" aria-hidden="true">🍽️</div>
+        </section>
 
-          {/* Kitchen Card */}
-          <Link
-            to="/kitchen"
-            className="group glass rounded-3xl p-8 hover:-translate-y-2 hover:shadow-2xl hover:shadow-green-500/20 dark:hover:shadow-emerald-500/10 transition-all duration-300 border-t border-l border-white/60 dark:border-white/5"
-          >
-            <div className="bg-gradient-to-br from-green-100 to-green-50 dark:from-emerald-500/20 dark:to-emerald-500/5 w-20 h-20 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-inner group-hover:scale-110 transition-transform">
-              👨‍🍳
+        <section aria-labelledby="workspace-heading">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">Your workspace</p>
+              <h2 id="workspace-heading" className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Choose a station</h2>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-green-600 dark:group-hover:text-emerald-400 transition-colors">
-              KITCHEN
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400 leading-relaxed mb-6 h-12">
-              View incoming orders, update status, and manage preparation.
-            </p>
-            <div className="space-y-2 border-t pt-4 border-gray-100 dark:border-white/8">
-              {['View approved orders', 'Update order status', 'Track preparation'].map(item => (
-                <div key={item} className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-400">
-                  <span className="text-green-500 dark:text-emerald-400 mr-2 text-lg">•</span> {item}
+            <p className="text-sm text-slate-500 dark:text-slate-400">Pick a role to get started</p>
+          </div>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+            {roles.map(({ title, description, icon, accent, href, features }) => (
+              <Link
+                key={title}
+                to={href}
+                className={`group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-slate-900/70 ${accent === 'blue' ? 'hover:border-blue-300 hover:shadow-blue-950/10' : accent === 'emerald' ? 'hover:border-emerald-300 hover:shadow-emerald-950/10' : 'hover:border-violet-300 hover:shadow-violet-950/10'}`}
+              >
+                <div className="flex items-start justify-between">
+                  <span className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl shadow-inner ${accent === 'blue' ? 'bg-blue-100 dark:bg-blue-400/15' : accent === 'emerald' ? 'bg-emerald-100 dark:bg-emerald-400/15' : 'bg-violet-100 dark:bg-violet-400/15'}`} aria-hidden="true">{icon}</span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition group-hover:translate-x-1 group-hover:bg-slate-900 group-hover:text-white dark:bg-white/10 dark:text-slate-300 dark:group-hover:bg-white dark:group-hover:text-slate-900" aria-hidden="true">→</span>
                 </div>
-              ))}
-            </div>
-          </Link>
+                <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
+                <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600 dark:text-slate-400">{description}</p>
+                <ul className="mt-5 space-y-2 border-t border-slate-100 pt-4 dark:border-white/10">
+                  {features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                      <span className={`h-1.5 w-1.5 rounded-full ${accent === 'blue' ? 'bg-blue-500' : accent === 'emerald' ? 'bg-emerald-500' : 'bg-violet-500'}`} />{feature}
+                    </li>
+                  ))}
+                </ul>
+              </Link>
+            ))}
+          </div>
+        </section>
 
-          {/* Table Management Card */}
-          <Link
-            to="/tables"
-            className="group glass rounded-3xl p-8 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/20 dark:hover:shadow-purple-500/10 transition-all duration-300 border-t border-l border-white/60 dark:border-white/5"
-          >
-            <div className="bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-500/20 dark:to-purple-500/5 w-20 h-20 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-inner group-hover:scale-110 transition-transform">
-              🪑
+        <section className="flex flex-col gap-5 rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-sm dark:border-white/10 dark:bg-slate-900/60 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+          <div className="flex items-start gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-xl dark:bg-blue-400/15" aria-hidden="true">📋</span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700 dark:text-blue-300">Delivery tracking</p>
+              <h2 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">Team Astro · Jira</h2>
+              <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-400">Open the connected Jira workspace to review the backlog, sprint, and delivery status for this project.</p>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-              TABLES
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400 leading-relaxed mb-6 h-12">
-              Manage tables, generate QR codes, and view active sessions.
-            </p>
-            <div className="space-y-2 border-t pt-4 border-gray-100 dark:border-white/8">
-              {['Create & manage tables', 'Generate QR codes', 'Settle & reset tables'].map(item => (
-                <div key={item} className="flex items-center text-sm font-medium text-gray-600 dark:text-gray-400">
-                  <span className="text-purple-500 dark:text-purple-400 mr-2 text-lg">•</span> {item}
-                </div>
-              ))}
-            </div>
-          </Link>
-        </div>
+          </div>
+          <a href={jiraUrl} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-950/15 transition hover:-translate-y-0.5 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900">
+            Open Jira board <span aria-hidden="true">↗</span>
+          </a>
+        </section>
       </div>
     </Layout>
   );
