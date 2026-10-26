@@ -38,12 +38,15 @@ export default function CustomerMenuPage() {
       setTable(tableRes.data);
 
       const productsRes = await api.getActiveProducts();
-      if (productsRes.success && productsRes.data) {
-        setProducts(productsRes.data);
-        const categories = [...new Set(productsRes.data.map((p: Product) => p.category || 'Other'))];
-        if (categories.length > 0) {
-          setActiveCategory(categories[0] as string);
-        }
+      if (!productsRes.success || !Array.isArray(productsRes.data)) {
+        setError(productsRes.error || 'Unable to load the menu. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+      setProducts(productsRes.data);
+      const categories = [...new Set(productsRes.data.map((p: Product) => p.category || 'Other'))];
+      if (categories.length > 0) {
+        setActiveCategory(categories[0] as string);
       }
 
       const sessionRes = await api.getTableSession(token);
@@ -161,6 +164,9 @@ export default function CustomerMenuPage() {
           <div className="text-6xl mb-4">😔</div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Oops!</h1>
           <p className="text-gray-600 dark:text-gray-400">{error}</p>
+          <button onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-700 dark:bg-violet-600 dark:hover:bg-violet-500">
+            Try again
+          </button>
         </div>
       </div>
     );

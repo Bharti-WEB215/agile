@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { randomUUID } from 'crypto';
 import { prisma } from '../prisma';
+import { sendApiError } from '../apiError';
 
 const router = Router();
 
@@ -52,8 +53,7 @@ router.get('/', async (_req: Request, res: Response) => {
 
     res.json(tablesWithSession);
   } catch (error) {
-    console.error('Tables GET error:', error);
-    res.status(500).json({ error: 'Failed to fetch tables' });
+    sendApiError(res, error, 'Tables GET error:', 'Failed to fetch tables');
   }
 });
 
@@ -87,8 +87,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     res.status(201).json(table);
   } catch (error) {
-    console.error('Tables POST error:', error);
-    res.status(500).json({ error: 'Failed to create table' });
+    sendApiError(res, error, 'Tables POST error:', 'Failed to create table');
   }
 });
 
@@ -111,8 +110,7 @@ router.get('/:token', async (req: Request, res: Response) => {
 
     res.json(table);
   } catch (error) {
-    console.error('Table GET by token error:', error);
-    res.status(500).json({ error: 'Failed to fetch table' });
+    sendApiError(res, error, 'Table GET by token error:', 'Failed to fetch table');
   }
 });
 
@@ -156,8 +154,7 @@ router.get('/:token/session', async (req: Request, res: Response) => {
       orderCount: sessionOrders.length,
     });
   } catch (error) {
-    console.error('Table session GET error:', error);
-    res.status(500).json({ error: 'Failed to fetch table session' });
+    sendApiError(res, error, 'Table session GET error:', 'Failed to fetch table session');
   }
 });
 
@@ -190,8 +187,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
 
     res.json(table);
   } catch (error) {
-    console.error('Table PATCH error:', error);
-    res.status(500).json({ error: 'Failed to update table' });
+    sendApiError(res, error, 'Table PATCH error:', 'Failed to update table');
   }
 });
 
@@ -234,8 +230,7 @@ router.patch('/:id/settle', async (req: Request, res: Response) => {
 
     res.json({ message: 'Table settled successfully', table: result });
   } catch (error) {
-    console.error('Table settle error:', error);
-    res.status(500).json({ error: 'Failed to settle table' });
+    sendApiError(res, error, 'Table settle error:', 'Failed to settle table');
   }
 });
 
@@ -260,7 +255,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
     res.json({ message: 'Table deleted successfully' });
   } catch (error: any) {
-    console.error('Table DELETE error:', error);
     // Handle foreign key constraint violation
     if (error?.code === 'P2003') {
       res.status(409).json({
@@ -268,7 +262,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       });
       return;
     }
-    res.status(500).json({ error: 'Failed to delete table' });
+    sendApiError(res, error, 'Table DELETE error:', 'Failed to delete table');
   }
 });
 

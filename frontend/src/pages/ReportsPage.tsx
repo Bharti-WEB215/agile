@@ -18,30 +18,40 @@ export default function ReportsPage() {
   const [startDate, setStartDate] = useState(getTodayDate());
   const [endDate, setEndDate] = useState(getTodayDate());
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchDailySales = useCallback(async (date: string) => {
     setIsLoading(true);
+    setLoadError(null);
     const response = await api.getDailySales(date);
     if (response.success && response.data) {
       setDailySales(response.data);
+    } else {
+      setLoadError(response.error || 'Unable to load this report. Check the API and database, then retry.');
     }
     setIsLoading(false);
   }, []);
 
   const fetchItemSales = useCallback(async (start: string, end: string) => {
     setIsLoading(true);
+    setLoadError(null);
     const response = await api.getItemSales(start, end);
     if (response.success && response.data) {
       setItemSales(response.data);
+    } else {
+      setLoadError(response.error || 'Unable to load this report. Check the API and database, then retry.');
     }
     setIsLoading(false);
   }, []);
 
   const fetchPaymentSummary = useCallback(async (start: string, end: string) => {
     setIsLoading(true);
+    setLoadError(null);
     const response = await api.getPaymentSummary(start, end);
     if (response.success && response.data) {
       setPaymentSummary(response.data);
+    } else {
+      setLoadError(response.error || 'Unable to load this report. Check the API and database, then retry.');
     }
     setIsLoading(false);
   }, []);
@@ -68,6 +78,23 @@ export default function ReportsPage() {
             ← Back to Cashier
           </Link>
         </div>
+
+        {loadError && (
+          <div role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 p-5 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+            <p className="font-semibold">Could not load report</p>
+            <p className="mt-1 text-sm">{loadError}</p>
+            <button
+              onClick={() => {
+                if (activeTab === 'daily') void fetchDailySales(selectedDate);
+                else if (activeTab === 'item') void fetchItemSales(startDate, endDate);
+                else void fetchPaymentSummary(startDate, endDate);
+              }}
+              className="mt-4 rounded-lg bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-500"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">

@@ -5,6 +5,8 @@ import ordersRouter from './routes/orders';
 import reportsRouter from './routes/reports';
 import usersRouter from './routes/users';
 import tablesRouter from './routes/tables';
+import { prisma } from './prisma';
+import { sendApiError } from './apiError';
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -26,8 +28,13 @@ app.use('/api/users', usersRouter);
 app.use('/api/tables', tablesRouter);
 
 // Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+  } catch (error) {
+    sendApiError(res, error, 'Database health check failed:', 'Database health check failed');
+  }
 });
 
 // Global error handler

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { sendApiError } from '../apiError';
 
 const router = Router();
 
@@ -12,8 +13,7 @@ router.get('/', async (_req: Request, res: Response) => {
 
     res.json(users);
   } catch (error) {
-    console.error('Users GET error:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    sendApiError(res, error, 'Users GET error:', 'Failed to fetch users');
   }
 });
 

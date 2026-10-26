@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { sendApiError } from '../apiError';
 
 const router = Router();
 
@@ -78,8 +79,7 @@ router.get('/daily-sales', async (req: Request, res: Response) => {
       ordersByPaymentMode,
     });
   } catch (error) {
-    console.error('Daily sales report error:', error);
-    res.status(500).json({ error: 'Failed to generate daily sales report' });
+    sendApiError(res, error, 'Daily sales report error:', 'Failed to generate daily sales report');
   }
 });
 
@@ -149,8 +149,7 @@ router.get('/item-sales', async (req: Request, res: Response) => {
 
     res.json(itemSales);
   } catch (error) {
-    console.error('Item sales report error:', error);
-    res.status(500).json({ error: 'Failed to generate item sales report' });
+    sendApiError(res, error, 'Item sales report error:', 'Failed to generate item sales report');
   }
 });
 
@@ -211,8 +210,7 @@ router.get('/payment-summary', async (req: Request, res: Response) => {
 
     res.json(paymentSummary);
   } catch (error) {
-    console.error('Payment summary report error:', error);
-    res.status(500).json({ error: 'Failed to generate payment summary report' });
+    sendApiError(res, error, 'Payment summary report error:', 'Failed to generate payment summary report');
   }
 });
 

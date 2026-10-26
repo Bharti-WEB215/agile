@@ -16,6 +16,7 @@ type ToastType = { message: string; type: 'success' | 'error' | 'info' } | null;
 
 export default function CashierPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [productsError, setProductsError] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('CASH');
   const [isLoading, setIsLoading] = useState(true);
@@ -41,13 +42,14 @@ export default function CashierPage() {
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     const response = await api.getProducts();
-    if (response.success && response.data) {
+    if (response.success && Array.isArray(response.data)) {
       setProducts(response.data);
+      setProductsError(null);
     } else {
-      showToast('Failed to load products', 'error');
+      setProductsError(response.error || 'Unable to load products. Check the API and database, then retry.');
     }
     setIsLoading(false);
-  }, [showToast]);
+  }, []);
 
   useEffect(() => {
     fetchProducts();
@@ -280,6 +282,25 @@ export default function CashierPage() {
               View Reports
             </Link>
           </div>
+
+          {productsError && (
+            <div
+              role="alert"
+              className="mb-6 flex flex-col gap-4 rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-900 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-100 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <h2 className="font-bold">Products could not be loaded</h2>
+                <p className="mt-1 text-sm opacity-90">{productsError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void fetchProducts()}
+                className="shrink-0 rounded-xl bg-rose-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-800 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
+              >
+                Retry
+              </button>
+            </div>
+          )}
 
           {/* Place Order Tab */}
           {activeTab === 'order' && (

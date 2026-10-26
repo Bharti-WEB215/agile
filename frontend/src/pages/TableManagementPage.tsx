@@ -13,6 +13,7 @@ type ToastType = { message: string; type: 'success' | 'error' | 'info' } | null;
 export default function TableManagementPage() {
   const [tables, setTables] = useState<TableWithSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [newTableNo, setNewTableNo] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -27,11 +28,12 @@ export default function TableManagementPage() {
     const response = await api.getTables();
     if (response.success && response.data) {
       setTables(response.data);
+      setLoadError(null);
     } else {
-      showToast('Failed to load tables', 'error');
+      setLoadError(response.error || 'Unable to load tables. Check the API and database, then retry.');
     }
     setIsLoading(false);
-  }, [showToast]);
+  }, []);
 
   useEffect(() => {
     fetchTables();
@@ -154,6 +156,12 @@ export default function TableManagementPage() {
           <div className="flex items-center justify-center py-20">
             <LoadingSpinner size="lg" />
             <span className="ml-4 text-xl text-gray-600 dark:text-gray-400">Loading tables...</span>
+          </div>
+        ) : loadError ? (
+          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+            <p className="font-semibold">Could not load tables</p>
+            <p className="mt-1 text-sm">{loadError}</p>
+            <button onClick={() => void fetchTables()} className="mt-4 rounded-lg bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-800 dark:bg-red-600 dark:hover:bg-red-500">Retry</button>
           </div>
         ) : tables.length === 0 ? (
           <EmptyState

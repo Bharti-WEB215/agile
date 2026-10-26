@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma';
+import { sendApiError } from '../apiError';
 
 const router = Router();
 
@@ -21,8 +22,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     res.json(products);
   } catch (error) {
-    console.error('Products GET error:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+    sendApiError(res, error, 'Products GET error:', 'Failed to fetch products');
   }
 });
 
@@ -52,8 +52,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     res.status(201).json(product);
   } catch (error) {
-    console.error('Products POST error:', error);
-    res.status(500).json({ error: 'Failed to create product' });
+    sendApiError(res, error, 'Products POST error:', 'Failed to create product');
   }
 });
 
@@ -77,8 +76,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     res.json(product);
   } catch (error) {
-    console.error('Product GET error:', error);
-    res.status(500).json({ error: 'Failed to fetch product' });
+    sendApiError(res, error, 'Product GET error:', 'Failed to fetch product');
   }
 });
 
@@ -122,8 +120,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     res.json(product);
   } catch (error) {
-    console.error('Product PUT error:', error);
-    res.status(500).json({ error: 'Failed to update product' });
+    sendApiError(res, error, 'Product PUT error:', 'Failed to update product');
   }
 });
 
@@ -154,8 +151,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
 
     res.json(product);
   } catch (error) {
-    console.error('Product PATCH error:', error);
-    res.status(500).json({ error: 'Failed to update product status' });
+    sendApiError(res, error, 'Product PATCH error:', 'Failed to update product status');
   }
 });
 

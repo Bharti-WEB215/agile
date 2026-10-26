@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { randomUUID } from 'crypto';
 import { prisma } from '../prisma';
+import { sendApiError } from '../apiError';
 
 const router = Router();
 
@@ -55,8 +56,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     res.json(orders);
   } catch (error) {
-    console.error('Orders GET error:', error);
-    res.status(500).json({ error: 'Failed to fetch orders' });
+    sendApiError(res, error, 'Orders GET error:', 'Failed to fetch orders');
   }
 });
 
@@ -81,8 +81,7 @@ router.get('/pending-approval', async (_req: Request, res: Response) => {
 
     res.json(orders);
   } catch (error) {
-    console.error('Pending approval GET error:', error);
-    res.status(500).json({ error: 'Failed to fetch pending orders' });
+    sendApiError(res, error, 'Pending approval GET error:', 'Failed to fetch pending orders');
   }
 });
 
@@ -163,12 +162,11 @@ router.post('/', async (req: Request, res: Response) => {
 
     res.status(201).json(order);
   } catch (error: any) {
-    console.error('Orders POST error:', error);
     if (error.message?.includes('Invalid quantity') || error.message?.includes('not found')) {
       res.status(400).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Failed to create order' });
+    sendApiError(res, error, 'Orders POST error:', 'Failed to create order');
   }
 });
 
@@ -257,12 +255,11 @@ router.post('/customer', async (req: Request, res: Response) => {
 
     res.status(201).json(order);
   } catch (error: any) {
-    console.error('Customer order POST error:', error);
     if (error.message?.includes('Invalid quantity') || error.message?.includes('not found')) {
       res.status(400).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Failed to create customer order' });
+    sendApiError(res, error, 'Customer order POST error:', 'Failed to create customer order');
   }
 });
 
@@ -294,8 +291,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     res.json(order);
   } catch (error) {
-    console.error('Order GET error:', error);
-    res.status(500).json({ error: 'Failed to fetch order' });
+    sendApiError(res, error, 'Order GET error:', 'Failed to fetch order');
   }
 });
 
@@ -337,8 +333,7 @@ router.patch('/:id/approve', async (req: Request, res: Response) => {
 
     res.json(order);
   } catch (error) {
-    console.error('Order approve error:', error);
-    res.status(500).json({ error: 'Failed to approve order' });
+    sendApiError(res, error, 'Order approve error:', 'Failed to approve order');
   }
 });
 
@@ -398,8 +393,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
 
     res.json(order);
   } catch (error) {
-    console.error('Order PATCH error:', error);
-    res.status(500).json({ error: 'Failed to update order status' });
+    sendApiError(res, error, 'Order PATCH error:', 'Failed to update order status');
   }
 });
 
