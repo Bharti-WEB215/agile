@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../src/prisma';
 
 async function main() {
   console.log('🌱 Starting database seed...');
@@ -66,8 +64,11 @@ async function main() {
   }
 
   // Explicit demo IDs bypass PostgreSQL's sequences; advance them for later inserts.
-  await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('products', 'id'), (SELECT COALESCE(MAX(id), 1) FROM products))`;
-  await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT COALESCE(MAX(id), 1) FROM users))`;
+  // SQLite manages its autoincrement counters automatically.
+  if (!process.env.DATABASE_URL?.startsWith('file:')) {
+    await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('products', 'id'), (SELECT COALESCE(MAX(id), 1) FROM products))`;
+    await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT COALESCE(MAX(id), 1) FROM users))`;
+  }
 
   console.log(`✅ Created ${products.length} products`);
 

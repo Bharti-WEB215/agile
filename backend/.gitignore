@@ -9,6 +9,7 @@ dist/
 
 # Prisma
 prisma/*.db
+src/generated/local-client/
 
 # IDE
 .vscode/
